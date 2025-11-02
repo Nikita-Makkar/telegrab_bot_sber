@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "telegrab-bot-sber"
+version = "0.1.0"
+description = "Telegram bot for collaborative line-by-line code generation through voting"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "bot"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^3.3.0"
+aiosqlite = "^0.19.0"
+openai = "^1.12.0"
+python-dotenv = "^1.0.0"
+aiofiles = "^23.2.1"
+httpx = "^0.27.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.23.3"
+pytest-mock = "^3.14.0"
+black = "^24.4.0"
+ruff = "^0.4.0"
+mypy = "^1.9.0"
+pytest-cov = "^7.0.0"
+
+[tool.poetry.scripts]
+bot = "bot.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
