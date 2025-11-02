@@ -43,4 +43,3 @@ run: ## Run the bot
 db-reset: ## Reset database (delete all data)
 	rm -f bot_data.db
 	@echo "Database reset complete"
-

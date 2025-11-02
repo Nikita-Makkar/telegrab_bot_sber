@@ -24,14 +24,7 @@ class Config:
     # Groq API (бесплатный)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 
-    # Hugging Face API (бесплатный tier)
-    HUGGINGFACE_API_KEY: str = os.getenv("HUGGINGFACE_API_KEY", "")
-
-    # Ollama (локальный, бесплатный)
-    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2")
-
-    # LLM Provider selection (groq, openai, huggingface, ollama)
+    # LLM Provider selection (groq, openai)
     # Если не указан, автоматически выберет доступный провайдер
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "").lower()
 
@@ -52,21 +45,16 @@ class Config:
         if not cls.BOT_TOKEN:
             raise ValueError("BOT_TOKEN is required")
 
-        # Если провайдер явно указан, проверяем соответствующий ключ
         if cls.LLM_PROVIDER:
             if cls.LLM_PROVIDER == "groq" and not cls.GROQ_API_KEY:
                 raise ValueError("GROQ_API_KEY is required when LLM_PROVIDER=groq")
             elif cls.LLM_PROVIDER == "openai" and not cls.OPENAI_API_KEY:
                 raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
-            elif cls.LLM_PROVIDER == "huggingface" and not cls.HUGGINGFACE_API_KEY:
-                raise ValueError("HUGGINGFACE_API_KEY is required when LLM_PROVIDER=huggingface")
         else:
-            # Проверяем наличие хотя бы одного LLM ключа для автовыбора
-            has_llm = cls.OPENAI_API_KEY or cls.GROQ_API_KEY or cls.HUGGINGFACE_API_KEY
+            has_llm = cls.OPENAI_API_KEY or cls.GROQ_API_KEY
             if not has_llm:
                 raise ValueError(
-                    "At least one LLM API key is required: "
-                    "OPENAI_API_KEY, GROQ_API_KEY, or HUGGINGFACE_API_KEY"
+                    "At least one LLM API key is required: OPENAI_API_KEY or GROQ_API_KEY"
                 )
 
         if not cls.ADMIN_USER_IDS:

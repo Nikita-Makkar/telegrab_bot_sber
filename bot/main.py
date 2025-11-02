@@ -33,45 +33,35 @@ logger = logging.getLogger(__name__)
 START_TIME = datetime.now()
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the bot."""
     try:
-        # Validate configuration
         Config.validate()
         logger.info("Configuration validated")
 
-        # Initialize components
-        bot = Bot(
+        bot: Bot = Bot(
             token=Config.BOT_TOKEN,
             default=DefaultBotProperties(parse_mode=ParseMode.HTML),
         )
-        dispatcher = Dispatcher()
+        dispatcher: Dispatcher = Dispatcher()
 
-        database = Database()
+        database: Database = Database()
         await database.init()
         logger.info("Database initialized")
 
-        # Инициализация LLM сервиса с автоматическим выбором провайдера
-        # По умолчанию использует Groq, если доступен GROQ_API_KEY
-        # Можно переопределить через LLM_PROVIDER в .env
-        llm_service = UnifiedLLMService()
+        llm_service: UnifiedLLMService = UnifiedLLMService()
         logger.info(f"LLM service initialized with provider: {llm_service.provider}")
 
-        poll_manager = PollManager(bot, database, llm_service)
+        poll_manager: PollManager = PollManager(bot, database, llm_service)
 
-        # Store dependencies as bot attributes for handlers to access
         bot.poll_manager = poll_manager
         bot.database = database
         bot.llm_service = llm_service
         bot.start_time = START_TIME
 
-        # Register handlers
         dispatcher.include_router(router)
 
-        # Restore active polls from database
         logger.info("Restoring active polls...")
-        # Note: This is simplified - in production you'd want to restore timer tasks
-        # For now, polls will just be tracked in DB and closed when they expire
 
         logger.info("Bot starting...")
         await dispatcher.start_polling(bot, allowed_updates=dispatcher.resolve_used_update_types())

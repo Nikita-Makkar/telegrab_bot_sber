@@ -11,8 +11,9 @@ from bot.config import Config
 class Database:
     """Database manager for storing chat history and poll results."""
 
-    def __init__(self, db_path: str = None):
-        self.db_path = db_path or Config.DATABASE_PATH
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        """Initialize database manager."""
+        self.db_path: str = db_path or Config.DATABASE_PATH
 
     async def init(self) -> None:
         """Initialize database tables."""
@@ -96,7 +97,7 @@ class Database:
         poll_id: str,
         line_number: int,
         options: List[str],
-        message_id: int = None,
+        message_id: Optional[int] = None,
     ) -> None:
         """Save a new poll."""
         async with aiosqlite.connect(self.db_path) as db:
@@ -199,11 +200,11 @@ class Database:
             async with db.execute(
                 "SELECT poll_id FROM chat_history WHERE chat_id = ?", (chat_id,)
             ) as cursor:
-                poll_ids = [row[0] for row in await cursor.fetchall()]
+                poll_ids: List[str] = [str(row[0]) for row in await cursor.fetchall()]
 
             # Delete votes for these polls
             if poll_ids:
-                placeholders = ",".join("?" * len(poll_ids))
+                placeholders: str = ",".join("?" * len(poll_ids))
                 await db.execute(
                     f"DELETE FROM poll_votes WHERE poll_id IN ({placeholders})",
                     poll_ids,
@@ -221,4 +222,5 @@ class Database:
                 (chat_id,),
             ) as cursor:
                 row = await cursor.fetchone()
-                return (row[0] or 0) + 1
+                max_line: Optional[int] = row[0] if row else None
+                return (max_line or 0) + 1

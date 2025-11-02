@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 import logging
 
 from aiogram import Bot
@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)
 class PollManager:
     """Manages polls lifecycle and voting."""
 
-    def __init__(self, bot: Bot, database: Database, llm_service: UnifiedLLMService):
-        self.bot = bot
-        self.db = database
-        self.llm = llm_service
-        self.active_polls: Dict[str, asyncio.Task] = {}  # poll_id -> close task
-        self.poll_timers: Dict[str, datetime] = {}  # poll_id -> close time
+    def __init__(self, bot: Bot, database: Database, llm_service: UnifiedLLMService) -> None:
+        """Initialize poll manager."""
+        self.bot: Bot = bot
+        self.db: Database = database
+        self.llm: UnifiedLLMService = llm_service
+        self.active_polls: Dict[str, asyncio.Task] = {}
+        self.poll_timers: Dict[str, datetime] = {}
 
     async def create_poll(self, chat_id: int) -> Optional[str]:
         """
@@ -94,12 +95,12 @@ class PollManager:
         except Exception as e:
             logger.error(f"Error closing poll {poll_id} after duration: {e}", exc_info=True)
 
-    async def handle_poll_answer(self, poll_id: str, user_id: int, option_ids: list) -> None:
+    async def handle_poll_answer(self, poll_id: str, user_id: int, option_ids: List[int]) -> None:
         """Handle a poll answer update."""
         if not option_ids:
             return
 
-        option_id = option_ids[0]  # Single choice poll
+        option_id: int = option_ids[0]
 
         try:
             await self.db.save_vote(poll_id, user_id, option_id)
@@ -116,7 +117,7 @@ class PollManager:
             poll_id: Poll ID to close
         """
         try:
-            # Cancel scheduled close task if exists
+
             if poll_id in self.active_polls:
                 task = self.active_polls.pop(poll_id)
                 task.cancel()
@@ -125,26 +126,21 @@ class PollManager:
                 except asyncio.CancelledError:
                     pass
 
-            # Get active poll to retrieve message_id
             active = await self.db.get_active_poll(chat_id)
             message_id = (
                 active.get("message_id") if active and active.get("poll_id") == poll_id else None
             )
 
-            # Get vote counts
-            vote_counts = await self.db.get_vote_counts(poll_id)
+            vote_counts: Dict[int, int] = await self.db.get_vote_counts(poll_id)
 
             if not vote_counts:
                 logger.warning(f"No votes for poll {poll_id}, using first option as default")
-                winner_option = 0
+                winner_option: int = 0
             else:
-                # Find option with most votes
                 winner_option = max(vote_counts.items(), key=lambda x: x[1])[0]
 
-            # Close poll in database
             await self.db.close_poll(poll_id, winner_option)
 
-            # Stop poll via bot API if we have message_id
             if message_id:
                 try:
                     await self.bot.stop_poll(chat_id=chat_id, message_id=message_id)
@@ -156,23 +152,22 @@ class PollManager:
 
             logger.info(f"Closed poll {poll_id}, winner: option {winner_option}")
 
-            # Automatically create next poll
-            await asyncio.sleep(1)  # Small delay before next poll
+            await asyncio.sleep(1)
             await self.create_poll(chat_id)
 
         except Exception as e:
             logger.error(f"Error closing poll {poll_id}: {e}", exc_info=True)
 
-    async def get_poll_status(self, chat_id: int) -> Optional[Dict]:
+    async def get_poll_status(self, chat_id: int) -> Optional[Dict[str, Any]]:
         """Get status of active poll for a chat."""
-        active = await self.db.get_active_poll(chat_id)
+        active: Optional[Dict[str, Any]] = await self.db.get_active_poll(chat_id)
         if not active:
             return None
 
-        poll_id = active["poll_id"]
-        close_time = self.poll_timers.get(poll_id)
+        poll_id: str = active["poll_id"]
+        close_time: Optional[datetime] = self.poll_timers.get(poll_id)
         if close_time:
-            time_remaining = (close_time - datetime.now()).total_seconds()
+            time_remaining: float = (close_time - datetime.now()).total_seconds()
             active["time_remaining_seconds"] = max(0, int(time_remaining))
         else:
             active["time_remaining_seconds"] = None
