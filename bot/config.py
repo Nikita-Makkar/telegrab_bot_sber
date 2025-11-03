@@ -5,6 +5,14 @@ from typing import List
 
 from dotenv import load_dotenv
 
+from bot.constants import (
+    ERROR_MISSING_BOT_TOKEN,
+    ERROR_GROQ_KEY_REQUIRED,
+    ERROR_OPENAI_KEY_REQUIRED,
+    ERROR_NO_LLM_KEYS,
+    ERROR_MISSING_ADMIN_IDS,
+)
+
 load_dotenv()
 
 
@@ -43,19 +51,17 @@ class Config:
     def validate(cls) -> None:
         """Validate that required configuration is present."""
         if not cls.BOT_TOKEN:
-            raise ValueError("BOT_TOKEN is required")
+            raise ValueError(ERROR_MISSING_BOT_TOKEN)
 
         if cls.LLM_PROVIDER:
             if cls.LLM_PROVIDER == "groq" and not cls.GROQ_API_KEY:
-                raise ValueError("GROQ_API_KEY is required when LLM_PROVIDER=groq")
+                raise ValueError(ERROR_GROQ_KEY_REQUIRED)
             elif cls.LLM_PROVIDER == "openai" and not cls.OPENAI_API_KEY:
-                raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
+                raise ValueError(ERROR_OPENAI_KEY_REQUIRED)
         else:
             has_llm = cls.OPENAI_API_KEY or cls.GROQ_API_KEY
             if not has_llm:
-                raise ValueError(
-                    "At least one LLM API key is required: OPENAI_API_KEY or GROQ_API_KEY"
-                )
+                raise ValueError(ERROR_NO_LLM_KEYS)
 
         if not cls.ADMIN_USER_IDS:
-            raise ValueError("ADMIN_USER_IDS is required")
+            raise ValueError(ERROR_MISSING_ADMIN_IDS)
